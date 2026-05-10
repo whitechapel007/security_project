@@ -1,0 +1,113 @@
+// Development: SQLite (zero setup)
+// Production: change provider to "postgresql" and update DATABASE_URL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         String     @default("artist") // artist | manager | admin | collaborator
+  mfaEnabled   Boolean    @default(false)
+  status       String     @default("active")  // active | suspended
+  createdAt    DateTime   @default(now())
+
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model Threat {
+  id          String   @id @default(cuid())
+  category    String   // STRIDE category
+  description String
+  severity    String   // low | medium | high | critical
+  source      String
+  target      String
+  status      String   @default("investigating") // active | mitigated | investigating
+  likelihood  Int      @default(3)
+  impact      Int      @default(3)
+  riskScore   Int      @default(9)
+  createdAt   DateTime @default(now())
+
+  @@map("threats")
+}
+
+model RiskItem {
+  id         String   @id @default(cuid())
+  name       String
+  category   String
+  likelihood Int
+  impact     Int
+  mitigation String
+  status     String   @default("open") // open | mitigated | accepted
+  createdAt  DateTime @default(now())
+
+  @@map("risk_items")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  userName  String
+  userRole  String
+  action    String
+  resource  String
+  status    String   // success | failure | warning
+  ipAddress String
+  details   String
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model SimulationScenario {
+  id                  String   @id @default(cuid())
+  name                String
+  type                String   // phishing | misconfiguration | tampering
+  description         String
+  attackSuccessWithout Float
+  attackSuccessWith   Float
+  detectionRate       Float
+  recoveryTime        String
+  controls            String   // JSON array stored as string
+  createdAt           DateTime @default(now())
+
+  results SimulationResult[]
+
+  @@map("simulation_scenarios")
+}
+
+model SimulationResult {
+  id                  String             @id @default(cuid())
+  scenarioId          String
+  scenario            SimulationScenario @relation(fields: [scenarioId], references: [id])
+  attackSuccessBefore Float
+  attackSuccessAfter  Float
+  detectionRate       Float
+  recoveryTime        String
+  ranBy               String
+  createdAt           DateTime           @default(now())
+
+  @@map("simulation_results")
+}
+
+model SecurityMetric {
+  id        String   @id @default(cuid())
+  date      String   @unique
+  score     Int
+  threats   Int
+  resolved  Int
+  createdAt DateTime @default(now())
+
+  @@map("security_metrics")
+}

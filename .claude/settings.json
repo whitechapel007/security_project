@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('version:', d.get\\('version'\\)\\); print\\('main:', d.get\\('main'\\)\\)\")",
+      "Bash(echo \"exit: $?\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts', {}\\), indent=2\\)\\)\")",
+      "Bash(TURBOPACK=0 npx next build)"
+    ]
+  }
+}
