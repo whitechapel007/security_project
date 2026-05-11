@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/session';
 import { logEvent, getClientIp } from '@/lib/services/auditService';
+import { runSimulation } from '@/lib/services/simulationEngine';
 
 const schema = z.object({ scenarioId: z.string().min(1) });
 
@@ -20,27 +21,34 @@ export async function POST(req: NextRequest) {
   const scenario = await prisma.simulationScenario.findUnique({ where: { id: parsed.data.scenarioId } });
   if (!scenario) return NextResponse.json({ error: 'Scenario not found' }, { status: 404 });
 
+  // Run Monte Carlo simulation for this scenario type
+  const report = runSimulation(scenario.type);
+
   const result = await prisma.simulationResult.create({
     data: {
-      scenarioId: scenario.id,
-      attackSuccessBefore: scenario.attackSuccessWithout,
-      attackSuccessAfter: scenario.attackSuccessWith,
-      detectionRate: scenario.detectionRate,
-      recoveryTime: scenario.recoveryTime,
-      ranBy: session.name,
+      scenarioId:           scenario.id,
+      attackSuccessBefore:  report.baseline.attackSuccessRate,
+      attackSuccessAfter:   report.controlled.attackSuccessRate,
+      detectionRate:        report.controlled.detectionRate,
+      baselineDetectionRate: report.baseline.detectionRate,
+      recoveryTime:         scenario.recoveryTime,
+      ranBy:                session.name,
+      totalAttempts:        report.controlled.totalAttempts,
+      meanTimeToDetection:  report.controlled.meanTimeToDetection,
+      falsePositiveRate:    report.controlled.falsePositiveRate,
     },
   });
 
   await logEvent({
-    userId: session.userId,
+    userId:   session.userId,
     userName: session.name,
     userRole: session.role,
-    action: 'RUN',
+    action:   'RUN',
     resource: 'Simulation',
-    status: 'success',
+    status:   'success',
     ipAddress: getClientIp(req),
-    details: `Ran simulation: ${scenario.name}`,
+    details: `Ran ${scenario.name}: ASR ${report.baseline.attackSuccessRate}% → ${report.controlled.attackSuccessRate}% (${report.attackSuccessReduction}pp reduction)`,
   });
 
-  return NextResponse.json(result, { status: 201 });
+  return NextResponse.json({ result, report }, { status: 201 });
 }

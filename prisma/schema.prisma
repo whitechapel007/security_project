@@ -91,12 +91,16 @@ model SimulationResult {
   id                  String             @id @default(cuid())
   scenarioId          String
   scenario            SimulationScenario @relation(fields: [scenarioId], references: [id])
-  attackSuccessBefore Float
-  attackSuccessAfter  Float
-  detectionRate       Float
-  recoveryTime        String
-  ranBy               String
-  createdAt           DateTime           @default(now())
+  attackSuccessBefore   Float
+  attackSuccessAfter    Float
+  detectionRate         Float
+  baselineDetectionRate Float    @default(0)
+  recoveryTime          String
+  ranBy                 String
+  totalAttempts         Int      @default(0)
+  meanTimeToDetection   Float    @default(0)
+  falsePositiveRate     Float    @default(0)
+  createdAt             DateTime @default(now())
 
   @@map("simulation_results")
 }
