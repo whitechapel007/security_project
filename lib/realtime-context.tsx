@@ -1,8 +1,15 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { ThreatEvent } from './types';
-import { THREATS } from './mock-data';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
+import { ThreatEvent } from "./types";
+import { THREATS } from "./mock-data";
 
 export interface LiveEvent extends ThreatEvent {
   liveId: string;
@@ -49,17 +56,20 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       liveId,
       id: `LIVE-${Date.now()}`,
       timestamp: new Date().toISOString(),
-      status: Math.random() > 0.6 ? 'active' : 'investigating',
+      status: Math.random() > 0.6 ? "active" : "investigating",
       detectedAt: new Date(),
     };
-    setLiveFeed(prev => [event, ...prev].slice(0, 30));
-    setScanCount(prev => prev + Math.floor(Math.random() * 4) + 1);
+    setLiveFeed((prev) => [event, ...prev].slice(0, 30));
+    setScanCount((prev) => prev + Math.floor(Math.random() * 4) + 1);
     setLastScan(new Date());
-    setNotifCount(prev => prev + 1);
+    setNotifCount((prev) => prev + 1);
 
-    if (event.severity === 'critical' || event.severity === 'high') {
-      setToasts(prev => [event, ...prev].slice(0, 4));
-      setTimeout(() => setToasts(prev => prev.filter(t => t.liveId !== liveId)), 7000);
+    if (event.severity === "critical" || event.severity === "high") {
+      setToasts((prev) => [event, ...prev].slice(0, 4));
+      setTimeout(
+        () => setToasts((prev) => prev.filter((t) => t.liveId !== liveId)),
+        7000,
+      );
     }
   }, []);
 
@@ -68,13 +78,22 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
     let tid: ReturnType<typeof setTimeout>;
     const schedule = () => {
-      tid = setTimeout(() => { addEvent(); schedule(); }, 9000 + Math.random() * 8000);
+      tid = setTimeout(
+        () => {
+          addEvent();
+          schedule();
+        },
+        9000 + Math.random() * 8000,
+      );
     };
     const start = setTimeout(schedule, 4000);
 
-    const loginTick = setInterval(() => {
-      setFailedLogins(prev => prev + Math.floor(Math.random() * 3) + 1);
-    }, 18000 + Math.random() * 12000);
+    const loginTick = setInterval(
+      () => {
+        setFailedLogins((prev) => prev + Math.floor(Math.random() * 3) + 1);
+      },
+      18000 + Math.random() * 12000,
+    );
 
     return () => {
       clearTimeout(first);
@@ -85,13 +104,24 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   }, [addEvent]);
 
   const dismissToast = useCallback((liveId: string) => {
-    setToasts(prev => prev.filter(t => t.liveId !== liveId));
+    setToasts((prev) => prev.filter((t) => t.liveId !== liveId));
   }, []);
 
   const clearNotifs = useCallback(() => setNotifCount(0), []);
 
   return (
-    <RealtimeContext.Provider value={{ liveFeed, failedLogins, scanCount, lastScan, toasts, dismissToast, notifCount, clearNotifs }}>
+    <RealtimeContext.Provider
+      value={{
+        liveFeed,
+        failedLogins,
+        scanCount,
+        lastScan,
+        toasts,
+        dismissToast,
+        notifCount,
+        clearNotifs,
+      }}
+    >
       {children}
     </RealtimeContext.Provider>
   );
@@ -100,3 +130,4 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 export function useRealtime() {
   return useContext(RealtimeContext);
 }
+//this is a comment
